@@ -11,9 +11,6 @@ import org.springframework.integration.annotation.MessagingGateway;
 import org.springframework.integration.config.EnableIntegration;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.http.dsl.Http;
-import org.springframework.kafka.support.KafkaHeaders;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.support.MessageBuilder;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,8 +26,7 @@ public class SpringIntegrationClientApplication {
 		ObjectMapper obj=new ObjectMapper();
 		while(scanner.hasNext()) {
 			String line=scanner.nextLine();
-			Message<String> message = MessageBuilder.withPayload(line).setHeader(KafkaHeaders.MESSAGE_KEY, "key").setHeader(KafkaHeaders.TOPIC, "nishant").build();
-			channel.exchange(obj.writeValueAsString(message));
+			channel.exchange(line);
 		}
 		scanner.close();
 

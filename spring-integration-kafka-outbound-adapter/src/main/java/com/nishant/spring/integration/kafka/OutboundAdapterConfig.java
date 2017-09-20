@@ -47,7 +47,7 @@ public class OutboundAdapterConfig {
 		ckl.setConsumerFactory(consumerFactory());
 		return ckl;
 	}
-	
+
 	@Bean
 	public MessageChannel messgeChannel() {
 		return new DirectChannel();

@@ -7,14 +7,16 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.expression.common.LiteralExpression;
 import org.springframework.http.HttpMethod;
 import org.springframework.integration.annotation.ServiceActivator;
+import org.springframework.integration.annotation.Transformer;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.http.dsl.Http;
 import org.springframework.integration.kafka.outbound.KafkaProducerMessageHandler;
+import org.springframework.integration.transformer.MessageTransformingHandler;
+import org.springframework.integration.transformer.MethodInvokingTransformer;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
@@ -29,9 +31,23 @@ public class InboundAdapterConfig {
 				.requestMapping(m -> m.methods(HttpMethod.POST))
 				.requestPayloadType(String.class)
 				)
-				.channel(inputToKafka())
+				.channel(receivedInAdapter())
 				.get();
 	}
+
+	@Bean
+	public MessageChannel receivedInAdapter() {
+		return new DirectChannel();
+	}
+
+	@Transformer(inputChannel="receivedInAdapter")
+	@Bean
+	public MessageHandler transform() {
+		MessageTransformingHandler mth=new MessageTransformingHandler(new MethodInvokingTransformer(jsonToGeneric(), "convert"));
+		mth.setOutputChannel(inputToKafka());
+		return mth;
+	}
+
 
 	@Bean
 	public MessageChannel inputToKafka() {
@@ -41,11 +57,7 @@ public class InboundAdapterConfig {
 	@ServiceActivator(inputChannel = "inputToKafka")
 	@Bean
 	public MessageHandler handler() throws Exception {
-		KafkaProducerMessageHandler<String, String> handler =
-				new KafkaProducerMessageHandler<>(kafkaTemplate());
-		handler.setTopicExpression(new LiteralExpression("nishant"));
-		handler.setMessageKeyExpression(new LiteralExpression("key"));
-		return handler;
+		return new KafkaProducerMessageHandler<String, String>(kafkaTemplate());
 	}
 
 	@Bean
